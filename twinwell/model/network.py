@@ -40,3 +40,25 @@ class Network(object):
 
     def finishVehicleCount(self):
         return len([None for v in self.idVehicleMap.values() if v.isFinish(self.ts)])
+
+    # cross
+    def findCross(self):
+        countNode = {}
+        for link in self.idLinkMap.values():
+            if link.node1 not in countNode:
+                countNode[link.node1] = 1
+            else:
+                countNode[link.node1] += 1
+
+        cross = []
+        for node in countNode.keys():
+            if countNode[node] == 4:
+                cross.append(node)
+        return cross
+
+    def findCross_(self):
+        countNode = {}
+        for link in self.idLinkMap.values():
+            if link.node1 not in countNode: countNode[link.node1] = 0
+            countNode[link.node1] += 1
+        return [node for node in countNode.keys() if countNode[node] == 4]

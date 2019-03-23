@@ -26,27 +26,57 @@ from model.vehicle import Vehicle
 import os, csv, math
 
 def timeslot2tsPair(timeslot):
+    """
+    This function modifies time format to TIME PAIRS
+    :param timeslot:
+    :return:
+    """
     tlist = [t.split(".") for t in timeslot.split("-")]
     return datetime.datetime(2019, 1, 1, int(tlist[0][0]), int(tlist[0][1]), 0), datetime.datetime(2019, 1, 1, int(tlist[1][0]), int(tlist[1][1]))
 
 def vehicleMaxSpeed(type):
+    """
+    This function determines max vehicle speed: random pick from (min speed, max speed)
+    :param type:
+    :return: int, speed km/hour
+    """
     maxSpeedInterval = {"car": [70, 80], "truck": [50, 70], "bus": [40, 60]}
     return random.randint(maxSpeedInterval[type][0], maxSpeedInterval[type][1])
 
 def genDriverType():
+    """
+    This function determines driver types: randomly assign
+    :return: int, 0/1
+    """
     return random.randint(0, 1)
 
 def genDriverValueTimeGen(medianValueTime):
+    """
+    This functions generates driver value of time
+    random generate by normal distribution (mean=medianValueTime, sigma = mean/5)
+    :param medianValueTime:
+    :return:
+    """
     sigma = medianValueTime / 5.0
     return np.random.normal(medianValueTime, sigma, 1)[0]
 
 def genProbLaneChange(type):
+    """
+    This function calculate the probability of changing lane
+    :param type: driver type
+    :return: number in (0,1)
+    """
     if type == 0:
         return random.randint(0, 5) / 10.0
     elif type == 1:
         return random.randint(6, 10) / 10.0
 
 def readOd(path):
+    """
+    This function read OD file
+    :param path:
+    :return:
+    """
     filenames = os.listdir(path)
 
     tsPairNodePairTypeMap = {}
@@ -67,7 +97,17 @@ def readOd(path):
 
     return tsPairNodePairTypeMap
 
+
 def genVehicle(tsPairNodePairTypeMap, distribution, vehicleId, medianValueTime, network):
+    """
+    This function generate vehicle by "distribution"
+    :param tsPairNodePairTypeMap: in tsPAIR and nodePAIR generate type of VEHICLE
+    :param distribution: vehicle generation way
+    :param vehicleId:
+    :param medianValueTime:
+    :param network:
+    :return:
+    """
     if distribution == "uniform":
         for tsPair in tsPairNodePairTypeMap.keys():
             for nodePair in tsPairNodePairTypeMap[tsPair].keys():
@@ -88,4 +128,7 @@ def genVehicle(tsPairNodePairTypeMap, distribution, vehicleId, medianValueTime, 
                         valueTime = genDriverValueTimeGen(medianValueTime)
                         probLaneChange = genProbLaneChange(driverType)
 
-                        Vehicle(vehicleId, vehicleType, driverType, maxSpeed, valueTime, probLaneChange, vehicleStartTs, origin, dest, network)
+                        Vehicle(vehicleId, vehicleType, driverType, maxSpeed, valueTime, probLaneChange,
+                                vehicleStartTs, origin, dest, network)
+
+

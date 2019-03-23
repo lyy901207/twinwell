@@ -10,12 +10,24 @@ import csv
 import copy
 
 def readNodes(nodefile, network):
+    """
+    This function reads NODE from Nodefile in network
+    :param nodefile: path
+    :param network:
+    :return: Node
+    """
     f = csv.reader(nodefile)
     for row in f:
         (id, type, x, y) = (row[0], row[1], row[3], row[4])
         Node(id, type, x, y, network)
 
 def readLanes(lanefile, network):
+    """
+    This function reads LANE from lanefile in network
+    :param lanefile:
+    :param network:
+    :return: Lane
+    """
     f = csv.reader(lanefile)
     for row in f:
         linkId = row[4]

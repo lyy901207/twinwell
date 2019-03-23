@@ -48,6 +48,11 @@ class Vehicle(object):
         return not not self.finishTs
 
     def isRunning(self, ts):
+        """
+        This function judge whether the vehicle is running or not
+        :param ts: current time
+        :return: y/n
+        """
         return self.isBegin(ts) and not self.isFinish(ts)
     
 
@@ -57,10 +62,15 @@ class Vehicle(object):
                          str(self.startTs), str(self.nodeOrigin), str(self.nodeDest)]) + ">"
 
     def updateShortestPath(self):
-        startNode = self.currentLane.link.node2 if self.currentLane else self.nodeOrigin
+        """
+        This function is to update next shortest path
+        :return:
+        """
+        startNode = self.currentLane.link.node2 if self.currentLane else self.nodeOrigin #determine node1 of next lane
 
        # print(self.currentLane, startNode.id, self.nodeDest.id)
-        (bestLaneRoute, bestNodeMap, timeCost) = bestLaneBestNodeTimeCost(self.network.typeGraphMap[self.laneType], startNode.id, self.nodeDest.id)
+        (bestLaneRoute, bestNodeMap, timeCost) = bestLaneBestNodeTimeCost(self.network.typeGraphMap[self.laneType],
+                                                                          startNode.id, self.nodeDest.id)
         self.bestLaneRoute = bestLaneRoute
         self.bestNodeMap = bestNodeMap
         self.timeBudget = timeCost
@@ -70,6 +80,11 @@ class Vehicle(object):
         #print(self.bestLaneRoute, self.timeBudget, bestNodeMap, self.currentLane)
 
     def updateLocation(self, timeInSecond):
+        """
+        This function updates the location of vehicle in LANE
+        :param timeInSecond:
+        :return: currentLaneProcess
+        """
         remainingTime = timeInSecond
         while True:
             #if self.id == 1: print(self.currentLane, self.currentLaneProgress, self.bestLaneRoute)

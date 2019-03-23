@@ -30,13 +30,31 @@ class Lane(object):
         return "<" + " ".join(["lane" + self.id, self.type, str(self.link.node1.id), str(self.link.node2.id), "density: "+str(self.density), "speed: "+str(self.speed), "travelTime: "+str(self.travelTime) ]) + ">"
 
     def freeTimeInSec(self):
+        """
+        This function calculates the TRAVEL TIME for this LANE in FREE SPEED
+        :return: travel time
+        """
         return self.link.lengthInKm / self.freeSpeed * 3600.0
 
     def travelTimeInSec(self):
+        """
+        This function calculates the TRAVEL TIME for this LANE IN ? SPEED
+        :return: travel time
+        """
         return self.freeTimeInSec() * 1.25 #magic number
 
     def updatePropertiesBasedOnPcu(self):
+        """
+        This function is to update PCU properties
+        :return: None
+        """
         def densitySpeed(density, freespeed):
+            """
+            This function calculates the density speed based on density
+            :param density:
+            :param freespeed:
+            :return:
+            """
             # this function returns the speed on a lane when inputting a density
             # negative linear relationship between density and speed is used
             # additional parameters of free speed and jam  density are needed.

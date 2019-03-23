@@ -32,9 +32,19 @@ class Vehicle(object):
         #self.tsRouteMap = tsRouteMap
 
     def isBegin(self, ts):
+        """
+        This function judge whether the simulation starts
+        :param ts: current time
+        :return: y/n
+        """
         return ts >= self.startTs
 
     def isFinish(self, ts):
+        """
+        This function judge whether the simulation finishes
+        :param ts: current time
+        :return: y/n
+        """
         return not not self.finishTs
 
     def isRunning(self, ts):

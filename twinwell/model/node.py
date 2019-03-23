@@ -12,4 +12,9 @@ class Node(object):
         return "<" + " ".join(["node" + self.id, self.type, str(self.x), str(self.y)]) + ">"
 
     def dist(self, node):
+        """
+        This function is to calculate distance between current point with given NODE
+        :param node: given NODE
+        :return: distance
+        """
         return ((self.x - node.x) ** 2 + (self.y - node.y) ** 2) ** 0.5

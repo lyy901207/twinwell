@@ -86,6 +86,7 @@ def readOd(path):
         f.readline()
         r = csv.reader(f)
         for row in r:
+            print(row)
             (timeslot, vehicleType, origin, dest, volume) = (row[0], row[1], row[2], row[3], int(row[4]))
             tsPair = timeslot2tsPair(timeslot)
 
@@ -98,11 +99,13 @@ def readOd(path):
     return tsPairNodePairTypeMap
 
 
+
+
 def genVehicle(tsPairNodePairTypeMap, distribution, vehicleId, medianValueTime, network):
     """
     This function generate vehicle by "distribution"
     :param tsPairNodePairTypeMap: in tsPAIR and nodePAIR generate type of VEHICLE
-    :param distribution: vehicle generation way
+    :param distribution: "uniform";"uniform_whole";"random";"random_whole";"normal_whole"
     :param vehicleId:
     :param medianValueTime:
     :param network:
@@ -131,4 +134,170 @@ def genVehicle(tsPairNodePairTypeMap, distribution, vehicleId, medianValueTime, 
                         Vehicle(vehicleId, vehicleType, driverType, maxSpeed, valueTime, probLaneChange,
                                 vehicleStartTs, origin, dest, network)
 
+    elif distribution == 'uniform_whole':
+        listTsPair = []  # collect all the time stamps of OD start and end
+        vehicleTotal = 0  # count the total number of vehicles in the OD matrix; not in pcu
+        for tsPair in tsPairNodePairTypeMap.keys():
+            startTs, endTs = tsPair[0], tsPair[1]
+            if not startTs in listTsPair:
+                listTsPair.append(startTs)
+            if not endTs in listTsPair:
+                listTsPair.append(endTs)
+            for nodePair in tsPairNodePairTypeMap[tsPair].keys():
+                for vehicleType in tsPairNodePairTypeMap[tsPair][nodePair]:
+                    vehicleTypeValue = tsPairNodePairTypeMap[tsPair][nodePair][vehicleType]
+                    vehicleTotal += vehicleTypeValue
+        #print(vehicleTotal)
+        listTsPair.sort()  # re-order the time stamps of OD starts and ends
+        startTs = listTsPair[0]
+        endTs = listTsPair[-1]
+        duration = endTs - startTs
+        #print(duration.seconds)
 
+        if vehicleTotal > 0:
+            interval = 1.0 * duration / vehicleTotal
+
+        for tsPair in tsPairNodePairTypeMap.keys():
+            for nodePair in tsPairNodePairTypeMap[tsPair].keys():
+                origin, dest = network.idNodeMap[nodePair[0]], network.idNodeMap[nodePair[1]]
+                for vehicleType in tsPairNodePairTypeMap[tsPair][nodePair]:
+                    vehicleVolume = tsPairNodePairTypeMap[tsPair][nodePair][vehicleType]
+                    if not vehicleVolume: continue
+                    for i in range(vehicleVolume):
+                        vehicleId += 1
+                        vehicleStartTs = startTs + datetime.timedelta(seconds=int(math.ceil(interval.seconds * i)))
+                        maxSpeed = vehicleMaxSpeed(vehicleType)
+                        driverType = genDriverType()
+                        valueTime = genDriverValueTimeGen(medianValueTime)
+                        probLaneChange = genProbLaneChange(driverType)
+                        Vehicle(vehicleId, vehicleType, driverType, maxSpeed, valueTime,
+                                probLaneChange,vehicleStartTs, origin, dest, network)
+
+    elif distribution == "random":
+        # the vehicles are randomly generated/put onto the network during the time slot
+        # a random time-stamp during the time slot
+        # the calculated start-time-stamp of vehicle has to be modified a bit to suit the convenience of time-step
+        # for simulation
+        for tsPair in tsPairNodePairTypeMap.keys():
+            for nodePair in tsPairNodePairTypeMap[tsPair].keys():
+                for vehicleType in tsPairNodePairTypeMap[tsPair][nodePair]:
+                    vehicleVolume = tsPairNodePairTypeMap[tsPair][nodePair][vehicleType]
+                    startTs, endTs = tsPair[0], tsPair[1] # two time stamps are in string type
+                    #print start_timestamp,end_timestamp
+                    #print type(start_timestamp),type(end_timestamp)
+                    duration = endTs - startTs # the duration of time slot of each csv file; unit in seconds
+                    origin, dest = network.idNodeMap[nodePair[0]], network.idNodeMap[nodePair[1]] ######*******Origin and Destination
+
+                    if vehicleVolume>0:
+                        for i in range(vehicleVolume):# totally generate OD_value vehicles in this iteration
+                            pickId = random.randint(0, duration.seconds - 1)
+                            vehicleId += 1
+                            vehicleStartTs = startTs + datetime.timedelta(seconds=int(math.ceil(pickId)))
+                            #print(vehicleStartTs)
+                            maxSpeed = vehicleMaxSpeed(vehicleType)
+                            driverType = genDriverType()
+                            valueTime = genDriverValueTimeGen(medianValueTime)
+                            probLaneChange = genProbLaneChange(driverType)
+                            Vehicle(vehicleId, vehicleType, driverType, maxSpeed, valueTime,
+                                    probLaneChange, vehicleStartTs, origin, dest, network)
+
+    elif distribution == "random_whole":
+        listTsPair = []  # collect all the time stamps of OD start and end
+        vehicleTotal = 0  # count the total number of vehicles in the OD matrix; not in pcu
+        for tsPair in tsPairNodePairTypeMap.keys():
+            startTs, endTs = tsPair[0], tsPair[1]
+            if not startTs in listTsPair:
+                listTsPair.append(startTs)
+            if not endTs in listTsPair:
+                listTsPair.append(endTs)
+            for nodePair in tsPairNodePairTypeMap[tsPair].keys():
+                for vehicleType in tsPairNodePairTypeMap[tsPair][nodePair]:
+                    vehicleTypeValue = tsPairNodePairTypeMap[tsPair][nodePair][vehicleType]
+                    vehicleTotal += vehicleTypeValue
+        #print(vehicleTotal)
+        listTsPair.sort()  # re-order the time stamps of OD starts and ends
+        startTs = listTsPair[0]
+        endTs = listTsPair[-1]
+        duration = endTs - startTs
+        #print(duration.seconds)
+
+        if vehicleTotal > 0:
+            for tsPair in tsPairNodePairTypeMap.keys():
+                for nodePair in tsPairNodePairTypeMap[tsPair].keys():
+                    origin, dest = network.idNodeMap[nodePair[0]], network.idNodeMap[nodePair[1]]
+                    for vehicleType in tsPairNodePairTypeMap[tsPair][nodePair]:
+                        vehicleVolume = tsPairNodePairTypeMap[tsPair][nodePair][vehicleType]
+                        if not vehicleVolume: continue
+                        for i in range(vehicleVolume):
+                            pickId = random.randint(0, duration.seconds - 1)
+                            vehicleId += 1
+                            vehicleStartTs = startTs + datetime.timedelta(seconds=int(math.ceil(pickId)))
+                            #print(vehicleStartTs)
+                            maxSpeed = vehicleMaxSpeed(vehicleType)
+                            driverType = genDriverType()
+                            valueTime = genDriverValueTimeGen(medianValueTime)
+                            probLaneChange = genProbLaneChange(driverType)
+                            Vehicle(vehicleId, vehicleType, driverType, maxSpeed, valueTime,
+                                    probLaneChange,vehicleStartTs, origin, dest, network)
+
+    elif distribution == "normal_whole":
+        listTsPair = []  # collect all the time stamps of OD start and end
+        vehicleTotal = 0  # count the total number of vehicles in the OD matrix; not in pcu
+        for tsPair in tsPairNodePairTypeMap.keys():
+            startTs, endTs = tsPair[0], tsPair[1]
+            if not startTs in listTsPair:
+                listTsPair.append(startTs)
+            if not endTs in listTsPair:
+                listTsPair.append(endTs)
+            for nodePair in tsPairNodePairTypeMap[tsPair].keys():
+                for vehicleType in tsPairNodePairTypeMap[tsPair][nodePair]:
+                    vehicleTypeValue = tsPairNodePairTypeMap[tsPair][nodePair][vehicleType]
+                    vehicleTotal += vehicleTypeValue
+
+        listTsPair.sort()  # re-order the time stamps of OD starts and ends
+        startTs = listTsPair[0]
+        endTs = listTsPair[-1]
+        duration = endTs - startTs
+        mu = 900 ## need to be set
+        sigma = 100 ## need to be set
+
+        def normalTs(mu, sigma, size):
+            """
+            special attention for mu and sigma!!!
+            :param mu:
+            :param sigma:
+            :param size:
+            :return:
+            """
+            # set seeds
+            np.random.seed(10)
+            s = np.random.normal(mu, sigma, size)
+            listTs = []  # initialize the output list of time stamps
+            # convert items in s to int
+            for i in range(0, len(s)):
+                s[i] = int(math.ceil(s[i]))
+                if s[i] <= 0:
+                    s[i] = 1
+                timestamp = startTs + datetime.timedelta(seconds=s[i])
+                listTs.append(timestamp)
+            listTs.sort()
+            return listTs
+
+        normTsList = normalTs(mu, sigma, vehicleTotal)
+
+
+        if duration.seconds > 0 and vehicleTotal > 0:
+            for tsPair in tsPairNodePairTypeMap.keys():
+                for nodePair in tsPairNodePairTypeMap[tsPair].keys():
+                    origin, dest = network.idNodeMap[nodePair[0]], network.idNodeMap[nodePair[1]]
+                    for vehicleType in tsPairNodePairTypeMap[tsPair][nodePair]:
+                        vehicleVolume = tsPairNodePairTypeMap[tsPair][nodePair][vehicleType]
+                        for i in range(0, vehicleVolume):
+                            vehicleId += 1
+                            vehicleStartTs = normTsList.pop(0)
+                            maxSpeed = vehicleMaxSpeed(vehicleType)
+                            driverType = genDriverType()
+                            valueTime = genDriverValueTimeGen(medianValueTime)
+                            probLaneChange = genProbLaneChange(driverType)
+                            Vehicle(vehicleId, vehicleType, driverType, maxSpeed, valueTime,
+                                    probLaneChange,vehicleStartTs, origin, dest, network)

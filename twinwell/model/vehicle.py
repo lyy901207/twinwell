@@ -79,7 +79,7 @@ class Vehicle(object):
             self.currentLaneProgress = 0
         #print(self.bestLaneRoute, self.timeBudget, bestNodeMap, self.currentLane)
 
-    def updateLocation(self, timeInSecond, isDelaying):
+    def updateLocation(self, timeInSecond):
         """
         This function updates the location of vehicle in LANE
         :param timeInSecond
@@ -93,30 +93,33 @@ class Vehicle(object):
             timeUseToFinishLane = 3600.0 * (
                         1.0 - self.currentLaneProgress) * self.currentLane.link.lengthInKm / self.currentLane.speed
             # if self.id == 1: print(timeUseToFinishLane)
-            if remainingTime > timeUseToFinishLane:
-                remainingTime -= timeUseToFinishLane
-                if isDelaying == True:
-                    if self.delayingTime < remainingTime:
-                        remainingTime -= self.delayingTime
-                    else:
-                        remainingTime = 0
-                else:
+            if self.delayingTime > 0:
+                if self.delayingTime < remainingTime:
                     remainingTime -= self.delayingTime
-
-                if self.currentLane.link.node2 == self.nodeDest:
-                    # finish
-                    self.finishTs = self.network.ts
-                    self.currentLane = None
-                    self.currentLaneProgress = None
-                    print(self, "finished at", self.finishTs)
-                    return
+                    self.delayingTime = 0
                 else:
-                    self.updateShortestPath()
-                    self.currentLane = self.network.typeGraphMap[self.laneType][self.currentLane.link.node2.id][
-                        self.bestNodeMap[self.currentLane.link.node2.id]]
-                    self.currentLaneProgress = 0.0
+                    self.delayingTime -= remainingTime
+                    remainingTime = 0
+                    break
             else:
-                break
+                if remainingTime > timeUseToFinishLane:
+                    remainingTime -= timeUseToFinishLane
+
+                    if self.currentLane.link.node2 == self.nodeDest:
+                        # finish
+                        self.finishTs = self.network.ts
+                        self.currentLane = None
+                        self.currentLaneProgress = None
+                        print(self, "finished at", self.finishTs)
+                        return
+                    else:
+                        self.delayingTime = 5
+                        self.updateShortestPath()
+                        self.currentLane = self.network.typeGraphMap[self.laneType][self.currentLane.link.node2.id][
+                            self.bestNodeMap[self.currentLane.link.node2.id]]
+                        self.currentLaneProgress = 0.0
+                else:
+                    break
         #update location
         self.currentLaneProgress += (self.currentLane.speed * remainingTime) / self.currentLane.link.lengthInKm / 3600.0
 

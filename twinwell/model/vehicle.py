@@ -83,7 +83,6 @@ class Vehicle(object):
         """
         This function updates the location of vehicle in LANE
         :param timeInSecond
-        :param delayStrategy
         :return: currentLaneProcess
         """
         remainingTime = timeInSecond
@@ -93,6 +92,7 @@ class Vehicle(object):
             timeUseToFinishLane = 3600.0 * (
                         1.0 - self.currentLaneProgress) * self.currentLane.link.lengthInKm / self.currentLane.speed
             # if self.id == 1: print(timeUseToFinishLane)
+            # if delay in node, updating time as below
             if self.delayingTime > 0:
                 if self.delayingTime < remainingTime:
                     remainingTime -= self.delayingTime
@@ -113,7 +113,7 @@ class Vehicle(object):
                         print(self, "finished at", self.finishTs)
                         return
                     else:
-                        self.delayingTime = 5
+                        self.delayingTime = 5 # currently the delaying time is fix, later it may be change
                         self.updateShortestPath()
                         self.currentLane = self.network.typeGraphMap[self.laneType][self.currentLane.link.node2.id][
                             self.bestNodeMap[self.currentLane.link.node2.id]]
@@ -122,29 +122,3 @@ class Vehicle(object):
                     break
         #update location
         self.currentLaneProgress += (self.currentLane.speed * remainingTime) / self.currentLane.link.lengthInKm / 3600.0
-
-    def updateDelay(self, delayStrategy, timeInSecond, aver_delay=0.05, delay_at_least=0, delay_at_most=3,
-                          effect_distance=50):
-        """
-        ## TODO
-        # this function is used to update the delay at each node (intersection) if a strategy of dynamic delay is selected.
-        # delay is a feature of a node and it is updated due to different delay strategy.
-        # if a delay at a node is necessary in the algorithm, just visit the feature of delay at a node.
-        # a defect of using this function is updating and calculating the delay at each simulation step
-        :param timeInSecond: current time
-        :param aver_delay:
-        :param delay_at_least:
-        :param delay_at_most:
-        :param effect_distance:
-        :return:
-        """
-        pre_timestamp = get_Pre_Timestamp(curr_timestamp, timestep)
-        for node_id in dic_nodes:
-            if delayStrategy == "vol-simple":
-                delay = delay_by_Vol_Simple(node_id, pre_timestamp, aver_delay)
-            elif delayStrategy == "vol-dist":
-                delay = delay_by_Vol_in_a_Dist(node_id, pre_timestamp, delay_at_least, delay_at_most, effect_distance)
-            elif strategy == "random":
-                delay = delay_by_Random(delay_at_least, delay_at_most)
-            idNodeMap[node.id]['delay'] = delay
-        return

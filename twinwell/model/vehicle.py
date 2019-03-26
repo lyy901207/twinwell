@@ -1,7 +1,7 @@
 from lib.Dijkstra2 import bestLaneBestNodeTimeCost
 
 class Vehicle(object):
-    def __init__(self, id, type, driverType, maxSpeed, valueTime, probLaneChange, startTs, nodeOrigin, nodeDest, delay, network):
+    def __init__(self, id, type, driverType, maxSpeed, valueTime, probLaneChange, startTs, nodeOrigin, nodeDest, network):
         self.id = id
         self.type = type
         self.driverType = driverType
@@ -11,7 +11,6 @@ class Vehicle(object):
         self.startTs = startTs
         self.nodeOrigin = nodeOrigin
         self.nodeDest = nodeDest
-        self.delay = delay
 
         self.network = network
         self.network.registerVehicle(self)
@@ -56,7 +55,6 @@ class Vehicle(object):
         """
         return self.isBegin(ts) and not self.isFinish(ts)
 
-
     def __repr__(self):
         return "<" + " ".join([str(self.id), self.type, str(self.driverType), str(self.maxSpeed),
                          str(self.valueTime), str(self.probLaneChange),
@@ -80,7 +78,7 @@ class Vehicle(object):
             self.currentLaneProgress = 0
         #print(self.bestLaneRoute, self.timeBudget, bestNodeMap, self.currentLane)
 
-    def updateLocation(self, timeInSecond, delay):
+    def updateLocation(self, timeInSecond, isDelaying):
         """
         This function updates the location of vehicle in LANE
         :param timeInSecond
@@ -88,53 +86,37 @@ class Vehicle(object):
         :return: currentLaneProcess
         """
         remainingTime = timeInSecond
+        delayingTime = 5
         while True:
-            if delay == 'no_delay':
-                # if self.id == 1: print(self.currentLane, self.currentLaneProgress, self.bestLaneRoute)
-                timeUseToFinishLane = 3600.0 * (
+            # if self.id == 1: print(self.currentLane, self.currentLaneProgress, self.bestLaneRoute)
+            timeUseToFinishLane = 3600.0 * (
                         1.0 - self.currentLaneProgress) * self.currentLane.link.lengthInKm / self.currentLane.speed
-                # if self.id == 1: print(timeUseToFinishLane)
-                if remainingTime > timeUseToFinishLane:
-                    remainingTime -= timeUseToFinishLane
-                    if self.currentLane.link.node2 == self.nodeDest:
-                        # finish
-                        self.finishTs = self.network.ts
-                        self.currentLane = None
-                        self.currentLaneProgress = None
-                        print(self, "finished at", self.finishTs)
-                        return
-                    else:
-                        self.updateShortestPath()
-                        self.currentLane = self.network.typeGraphMap[self.laneType][self.currentLane.link.node2.id][
-                            self.bestNodeMap[self.currentLane.link.node2.id]]
-                        self.currentLaneProgress = 0.0
-                else:
-                    break
-            elif delay == 'fixed_delay':
-                delayTime = 5
-                timeUseToFinishLane = 3600.0 * (
-                        1.0 - self.currentLaneProgress) * self.currentLane.link.lengthInKm / self.currentLane.speed
-                if remainingTime > timeUseToFinishLane:
-                    if timeUseToFinishLane <= timeStep:
-                        # 0.05 km is a given range that the vehicle should count into delay
-                        remainingTime -= timeUseToFinishLane + delayTime
-                    else:
-                        remainingTime -= timeUseToFinishLane
-                    if self.currentLane.link.node2 == self.nodeDest:
-                        # finish
-                        self.finishTs = self.network.ts
-                        self.currentLane = None
-                        self.currentLaneProgress = None
-                        print(self, "finished at", self.finishTs)
-                        return
-                    else:
-                        self.updateShortestPath()
-                        self.currentLane = self.network.typeGraphMap[self.laneType][self.currentLane.link.node2.id][
-                            self.bestNodeMap[self.currentLane.link.node2.id]]
-                        self.currentLaneProgress = 0.0
-                else:
-                    break
+            # if self.id == 1: print(timeUseToFinishLane)
 
+            if remainingTime > timeUseToFinishLane:
+                remainingTime -= timeUseToFinishLane
+                if isDelaying == True:
+                    if delayingTime < remainingTime:
+                        remainingTime -= delayingTime
+                    else:
+                        remainingTime = 0
+                else:
+                    remainingTime -= delayingTime
+
+                if self.currentLane.link.node2 == self.nodeDest:
+                    # finish
+                    self.finishTs = self.network.ts
+                    self.currentLane = None
+                    self.currentLaneProgress = None
+                    print(self, "finished at", self.finishTs)
+                    return
+                else:
+                    self.updateShortestPath()
+                    self.currentLane = self.network.typeGraphMap[self.laneType][self.currentLane.link.node2.id][
+                        self.bestNodeMap[self.currentLane.link.node2.id]]
+                    self.currentLaneProgress = 0.0
+            else:
+                break
         #update location
         self.currentLaneProgress += (self.currentLane.speed * remainingTime) / self.currentLane.link.lengthInKm / 3600.0
 

@@ -11,6 +11,7 @@ class Vehicle(object):
         self.startTs = startTs
         self.nodeOrigin = nodeOrigin
         self.nodeDest = nodeDest
+        self.delayTime = 0
 
         self.network = network
         self.network.registerVehicle(self)
@@ -86,22 +87,21 @@ class Vehicle(object):
         :return: currentLaneProcess
         """
         remainingTime = timeInSecond
-        delayingTime = 5
+
         while True:
             # if self.id == 1: print(self.currentLane, self.currentLaneProgress, self.bestLaneRoute)
             timeUseToFinishLane = 3600.0 * (
                         1.0 - self.currentLaneProgress) * self.currentLane.link.lengthInKm / self.currentLane.speed
             # if self.id == 1: print(timeUseToFinishLane)
-
             if remainingTime > timeUseToFinishLane:
                 remainingTime -= timeUseToFinishLane
                 if isDelaying == True:
-                    if delayingTime < remainingTime:
-                        remainingTime -= delayingTime
+                    if self.delayingTime < remainingTime:
+                        remainingTime -= self.delayingTime
                     else:
                         remainingTime = 0
                 else:
-                    remainingTime -= delayingTime
+                    remainingTime -= self.delayingTime
 
                 if self.currentLane.link.node2 == self.nodeDest:
                     # finish

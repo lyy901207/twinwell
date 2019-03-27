@@ -13,6 +13,12 @@ class Lane(object):
         self.fixedCharge = fixedCharge
 
         self.speed = speed
+        self.averageDelay = 0.5 ## not sure this number
+        self.maxPcu = 20 # in Pcu
+        self.minPcu = 5 # in Pcu
+        self.maxDelay = 10 # in second !!! not sure
+        self.minDelay = 5 # in second !!! not sure
+
 
         self.countPcu = 0
         self.density = 0.1
@@ -27,7 +33,9 @@ class Lane(object):
         self.network.registerLane(self)
 
     def __repr__(self):
-        return "<" + " ".join(["lane" + self.id, self.type, str(self.link.node1.id), str(self.link.node2.id), "density: "+str(self.density), "speed: "+str(self.speed), "travelTime: "+str(self.travelTime) ]) + ">"
+        return "<" + " ".join(["lane" + self.id, self.type, str(self.link.node1.id), str(self.link.node2.id),
+                               "density: "+str(self.density), "speed: "+str(self.speed),
+                               "travelTime: "+str(self.travelTime) ]) + ">"
 
     def freeTimeInSec(self):
         """
@@ -67,3 +75,21 @@ class Lane(object):
         self.density = self.countPcu / self.link.lengthInKm
         self.speed = densitySpeed(self.density, self.freeSpeed)
         self.travelTime = self.link.lengthInKm * 3600.0 / self.speed
+
+    def delayCalculation(self, strategy):
+        if strategy == 'vol_sim':
+            delayingTime = self.countPcu * self.averageDelay
+
+        elif strategy == 'vol_dist':
+            if self.countPcu > self.maxPcu:
+                delayingTime = self.maxDelay
+            elif self.countPcu < self.minPcu:
+                delayingTime = self.minDelay
+            else:
+                delayingTime = int(minDelay + 1.0 * (self.maxDelay - self.minDelay)
+                                   * (self.countPcu - self.minPcu)/(self.maxPcu - self.minPcu))
+
+        elif strategy == 'random':
+            delayingTime = np.randint(self.minDelay, self.maxDelay)
+
+        return delayingTime

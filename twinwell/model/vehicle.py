@@ -113,7 +113,8 @@ class Vehicle(object):
                         print(self, "finished at", self.finishTs)
                         return
                     else:
-                        self.delayingTime = 5 # currently the delaying time is fix, later it may be change
+                        #self.delayingTime = 5 # currently the delaying time is fix, later it may be change
+                        self.delayingTime = self.currentLane.delayCalculation('fix')
                         self.updateShortestPath()
                         self.currentLane = self.network.typeGraphMap[self.laneType][self.currentLane.link.node2.id][
                             self.bestNodeMap[self.currentLane.link.node2.id]]

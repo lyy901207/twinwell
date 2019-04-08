@@ -90,6 +90,7 @@ class Lane(object):
                                    * (self.countPcu - self.minPcu)/(self.maxPcu - self.minPcu))
         elif strategy == 'random':
             delayingTime = np.randint(self.minDelay, self.maxDelay)
+
         elif strategy == 'fix':
             delayingTime = 5
         return delayingTime

@@ -79,7 +79,7 @@ class Vehicle(object):
             self.currentLaneProgress = 0
         #print(self.bestLaneRoute, self.timeBudget, bestNodeMap, self.currentLane)
 
-    def updateLocation(self, timeInSecond):
+    def updateLocation(self, timeInSecond, delayType='fix'):
         """
         This function updates the location of vehicle in LANE
         :param timeInSecond
@@ -114,7 +114,8 @@ class Vehicle(object):
                         return
                     else:
                         #self.delayingTime = 5 # currently the delaying time is fix, later it may be change
-                        self.delayingTime = self.currentLane.delayCalculation('fix')
+                        # There are 4 types of delay strategy
+                        self.delayingTime = self.currentLane.delayCalculation(delayType)
                         self.updateShortestPath()
                         self.currentLane = self.network.typeGraphMap[self.laneType][self.currentLane.link.node2.id][
                             self.bestNodeMap[self.currentLane.link.node2.id]]

@@ -1,14 +1,36 @@
 '''
-Created on 2018/07/23
+Version 1.0 : 2018/07/23
+Version 2.0 : 2019/04/04
 
-@author: gong
+@author: Gong Lei(version 1.0), Li Yanyan (Version 2.0)
+The objectives of this project are:
+1. test the performance of lane-based toll-collection system;
+2. test whether driver-stress based route choice (v2.0);
+
+Conditions:
+1.Bus can change to a faster lane without external cost. 
+2.Private car changes to a faster lane depending on the value-time, 
+	driver's preference type.
+3.OD matrices are increasing from 10% to 100% with a step of 10% on 
+	both bus and private car.
+
+Output:
+1) travel time from each OD pair at each simulation step
+   average travel time for bus and private vehicles by OD pair
+2) composition of private car's decision : changed lane, not changed lane, 
+	in whole simulation period and every 5 minutes
+3) density of each lane at each simulation step
+4) start-time,end-time,saved-time if changing the lane of each vehicle
 '''
+
 import time, datetime
 import copy
 import random
 import csv
 import json
 
+# set the rule of the road, can be either "Left" or "Right"
+rule_of_road="Left"
 def check_position(p0, p1, p2):
     # this function checks the distance between point p0 to the line (connected from p1 to p2).
     # it is used to check whether the vehicle (update location is p0) is following the lane (line from p1 to p2)
@@ -106,6 +128,7 @@ def densityspeed(density, freespeed):
     # this function returns the speed on a lane when inputting a density
     # negative linear relationship between density and speed is used
     # additional parameters of free speed and jam  density are needed.
+
     if density >= jamdensity:  # to avoid getting 0 or minus speed
         speed = 0.001  # km/h
     else:
@@ -292,27 +315,34 @@ def lane_change(veh_id, curr_timestamp):
 from util.readNetwork import *
 from util.readOd import *
 from model.network import Network
+# set the start time for the simulation
 startTs = datetime.datetime(2019, 1, 1, 7, 0, 0)
 totalSteps = 5 #2000
+# one second for one step; total 3600 steps
 timeStep = 1
 
+# set jam density, 200 pcu/mile = 124 pcu/km
+# ref:https://lost-contact.mit.edu/afs/eos.ncsu.edu/info/ce400_info/www2/flow1.html
 jamDensity = 124
 medianValueTime = 50
 random.seed(10)
 
+# initialize vehicle-id; it is a global variable, as there may be many OD-matrix
+# the first vehicle id is 1 and is increased subsequently with a step of 1
 vehicleId = 0
 
 network = Network(startTs)
 
-fNode = open("C:/Users/Bai/Downloads/drive-download-20190102T022105Z-001/Sioux Falls network/nodes-SiouxFalls_gong.csv")
+fNode = open("Sioux Falls network/nodes-SiouxFalls_gong.csv")
 fNode.readline()
-fLane = open("C:/Users/Bai/Downloads/drive-download-20190102T022105Z-001/Sioux Falls network/lanes-SiouxFalls_gong.csv")
+fLane = open("Sioux Falls network/lanes-SiouxFalls_gong.csv")
 fLane.readline()
-pOd = "C:/Users/Bai/Downloads/drive-download-20190102T022105Z-001/meso_by_python/OD_data"
+pOd = "OD_data"
 
 readNodes(fNode, network)
 readLanes(fLane, network)
 tsPairNodePairTypeMap = readOd(pOd)
+# five types of vehicle generation method ['uniform', 'uniform_whole', 'random', 'random_whole', 'normal_whole']
 genVehicle(tsPairNodePairTypeMap, "uniform", vehicleId, medianValueTime, network)
 
 for vid in network.idVehicleMap:

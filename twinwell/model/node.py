@@ -6,6 +6,7 @@ class Node(object):
         self.y = float(y)
         self.network = network
 
+
         self.network.registerNode(self)
 
     def __repr__(self):
@@ -18,3 +19,11 @@ class Node(object):
         :return: distance
         """
         return ((self.x - node.x) ** 2 + (self.y - node.y) ** 2) ** 0.5
+
+    def manhattanDist(self, node):
+        '''
+        This function calculates the Manhattan distance between current point to given point
+        :param node:
+        :return:
+        '''
+        return abs(self.x - node.x) + abs(self.y - node.y)

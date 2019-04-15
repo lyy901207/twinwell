@@ -1,4 +1,5 @@
-from lib.Dijkstra2 import bestLaneBestNodeTimeCost
+#from lib.Dijkstra2 import bestLaneBestNodeTimeCost
+from lib.astar import bestLaneBestNodeTimeCost
 
 class Vehicle(object):
     def __init__(self, id, type, driverType, maxSpeed, valueTime, probLaneChange, startTs, nodeOrigin, nodeDest, network):
@@ -11,7 +12,7 @@ class Vehicle(object):
         self.startTs = startTs
         self.nodeOrigin = nodeOrigin
         self.nodeDest = nodeDest
-        self.delayTime = 0
+        self.delayingTime = 0
 
         self.network = network
         self.network.registerVehicle(self)

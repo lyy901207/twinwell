@@ -2,72 +2,24 @@
 #from lib.PrioDict import priorityDictionary
 import copy
 #import model.node
+#import model.turn
+import model.lane
 
-def graphStress1(G_time, G_stress, start, end):
-    # this function improve the graph of G_stress (based on turnings) as this graph does not include the origin and destination
-    # start is the start node and origin is a virtual point connecting to start node virtually.
-    # end is the end node and destination is a virtual point connecting to end node virtually.
-    # this function includes the origin and destination into the graph with stress of 0.
-    # origin point is noted as O and destination point is noted as D
-    # G_time is in the following format:   {node1:{node2:{'travel-time':time1,'speed':speed1,...},node3:{'travel-time':time2,'speed':speed2,...}},node3:{},node4:{}.......}
-    # G_stress is in the following format: {node1:{node2:{node0:stress1,node00:stress1,...},node3:{...}...},node3:{}....}, \
-    # \ which means a turning from link01(from node0 to node1) to link12(from node1 to node2)
 
-    # put O and virtual link from O to start into the graph of G_stress
-    if start not in G_time:
-        print(ERROR: no
-        link
-        starting
-        from the node
-        of
-        ", start)
-        else:
-        for node2 in G_time[start]:
-            if
-        start in G_stress:
-        if node2 in G_stress[start]:
-            G_stress[start][node2]['O'] = 0
-        else:
-            G_stress[start][node2] = {}
-        G_stress[start][node2]['O'] = 0
-        else:
-        G_stress[start] = {}
-        G_stress[start][node2] = {}
-        G_stress[start][node2]['O'] = 0
-
-        # put D and virtual link from end to D into the graph of G_stress
-        # actually the following part will not be used in the route searching
-        count_end = 0  # for counting when the end-node of a link is the given end
-        for node1 in G_time:
-            if
-        end in G_time[node1]:  # end--node2
-        count_end += 1
-        if end in G_stress:
-            G_stress[end]['D'] = {}
-        G_stress[end]['D'][node1] = 0
-        else:
-        G_stress[end] = {}
-        G_stress[end]['D'] = {}
-        G_stress[end]['D'][node1] = 0
-        if count_end >= 1:
-            return G_stress
-        else:
-            print("ERROR: no links ending at the node of", end)
-
-def generateCostMap(G):
+def generateCostMap(G, network):
     '''
     This function return costMap which should be used in astar
     :param G:
     :return:
     '''
     aMap = {}
-    for neighbors in G.keys():
+    for neighbors in G.id.keys():
         #print(neighbors)
         aMap[neighbors] = {}
         for node in G[neighbors]:
             #print(node)
             aMap[neighbors][node] = {}
-            aMap[neighbors][node]['tc'] = G[neighbors][node].travelTime  # TODO: function for travel cost
+            aMap[neighbors][node]['tc'] = network.idLaneMap[neighbors][node].travelTime  # TODO: function for travel cost
             aMap[neighbors][node]['stress'] =  0.0 # TODO: Stress Map
     return aMap
 
@@ -75,20 +27,25 @@ def generateCostMap(G):
 
 def astar(G, start, end, costMap):
     '''
+    G is a dictionary, indexed by vertices.  For any vertex v, G[v] is itself a dictionary, indexed by the neighbors
+    of v.  For any edge v->w, G[v][w] is the length of the edge.
     This function applied a star algorithm to find the lowest cost path
         G[node1][node2] = {'travel-time': travel time, 'stress': stress}
         g = travel time cost
         h = mahattanDist(end) + stress
         f = g + h
+    D: {node1: distance from start to node1, node2: distance from start to node2,...}
+    P: {node1: parent of node1, node2: parent of node2,...}
     :param G: road graph
     :param start: start node
     :param end: end node
     :param costMap: cost for node1 to node2
-    :return: return the list of node for lowest cost path
+    :return: (D, P)
     '''
 
     aMap = {} # dict to store g, h, f
     P = {} # dict to store parent node
+    D = {} # dict to store final cost
 
     start_node = start
     end_node = end
@@ -120,6 +77,7 @@ def astar(G, start, end, costMap):
         open_list.pop(current_index)
         closed_list.append(current_node)
 
+        D[current_node] = aMap[current_node]['f_cost']
         # Found the goal
         if current_node == end_node:
             #break
@@ -132,7 +90,8 @@ def astar(G, start, end, costMap):
                     current = P[current]
                 else:
                     break
-            return path[::-1] # Return reversed path
+            return (D, P)
+            #return path[::-1] # Return reversed path
 
         # Generate children
         children = []
@@ -168,6 +127,72 @@ def astar(G, start, end, costMap):
 
             # Add the child to the open list
             open_list.append(child)
+
+
+def shortestPathNode(G, start, end, costMap):
+    # revised by Gong
+    # this function returns a dictionary of cost (time or distance) along the path, \
+    # and a dictionary of node-pair of links in the shortest path given a graph and a pair of origin-destination.
+    # these two dictionaries have the same style as Dijkstra
+    #D, P = Dijkstra(G, start, end)
+    D, P = astar(G, start, end, costMap)
+    Path = []
+
+    reach = 0
+    if end in P:
+        reach = 1
+    else:
+        reach = 0
+
+    dic_path = {}  # {node3:node2,node2:node5,node5:node1....}
+    if reach == 1:
+        while 1:
+            Path.append(end)
+            if end == start: break
+            end = P[end]
+        Path.reverse()
+        for i in range(0, len(Path) - 1):
+            dic_path[Path[i]] = Path[i + 1]
+        return D, dic_path
+    else:
+        return D, dic_path
+
+def convert_ppath_to_pathids(dic_ppath, dic_graph, start, end):
+    '''
+    This function converts node id based shortest path output by shortestPathNode()
+    Further info @ Dijkstra2
+    :param dic_ppath: dic_ppath = P in shortestPathNode()
+    :param dic_graph: G is the input Graph
+    :param start_nodeid: start node id
+    :param end_nodeid: end node id
+    :return: dictionary of lane graph: {laneid1:laneid12,laneid12:laneid21,laneid21:laneid3,...}
+    '''
+    id1 = start
+    list_laneids = []  # result in the process, list of lanes that compose the shortest path
+    dic_routes = {}  # output
+    # print "convert the node-pairs to list-of-lanes"
+    if len(dic_ppath) > 0:
+        while id1 != end:
+            id2 = dic_ppath[id1]
+            laneid = dic_graph[id1][id2].id
+            list_laneids.append(laneid)
+            id1 = copy.deepcopy(id2)
+    # print "convert the list-of-lanes to dic-of-lanes"
+    if len(list_laneids) > 1:
+        for i in range(0, len(list_laneids) - 1):
+            dic_routes[list_laneids[i]] = list_laneids[i + 1]
+
+    # check the number of items in each dictionary and list
+    # print "the number of node-pairs:", len(dic_ppath)
+    # print "the number of lanes:     ", len(list_laneids)
+    # print "the number of lane-pairs:", len(dic_routes)
+    return dic_routes
+
+
+def bestLaneBestNodeTimeCost(G, start, end, costMap):
+    D, P = shortestPathNode(G, start, end, costMap)
+    bestRouteLane = convert_ppath_to_pathids(P, costMap, start, end)
+    return (bestRouteLane, P, D[end])
 
 
 def main():
@@ -215,8 +240,11 @@ def main():
     #start = (0, 0)
     #end = (7, 6)
 
-    print(generateCostMap(G))
-    path = astar(G, 's', 'y', costMap)
+    #print(generateCostMap(G))
+    aMap , P = astar(G, 's', 'y', costMap)
+    print('The fist return of astar() is:', aMap)
+    print('The second return of astar() is:', P)
+    #path = bestLaneBestNodeTimeCost(G, 's', 'y', costMap)
     #print(path)
 
 

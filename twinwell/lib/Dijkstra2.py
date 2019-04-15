@@ -7,7 +7,7 @@
 # the structure of dictionary of the graph has been changed a bit.
 # the length/travel time of a link is now located in a dictionary,
 # which means it needs one more step to get this value.
-from lib.PrioDict import priorityDictionary
+from PrioDict import priorityDictionary
 import copy
 
 def Dijkstra(G,start,end=None):
@@ -64,14 +64,13 @@ def Dijkstra(G,start,end=None):
         # preventing broken road occur
         if v in G:
             for w in G[v]:
-                vwLength = D[v] + G[v][w].travelTime
+                vwLength = D[v] + G[v][w]
                 if w in D:
                     if vwLength < D[w]:
                         raise ValueError("Dijkstra: found better path to already-final vertex")
                 elif w not in Q or vwLength < Q[w]:
                     Q[w] = vwLength
                     P[w] = v
-    
     return (D,P)
 
 def shortestPath(G,start,end):
@@ -172,15 +171,16 @@ def bestLaneBestNodeTimeCost(G, start, end):
 
 #G = {'s':{'u':9, 'x':5},'v':{'y':4},'x':{'y':4,'s':3},'u':{'y':1,'z':3}}
 #D1,P1=Dijkstra(G,'s','v')
-#print D1
+#print(D1)
 #print P1
 #print shortestPath(G,'s','v')
 '''
-G = {'s':{'u':{'travel-time':-9}, 'x':{'travel-time':5}},'v':{'y':{'travel-time':4}},'x':{'y':{'travel-time':-4},'s':{'travel-time':3}},'u':{'y':{'travel-time':1},'z':{'travel-time':3}}}
-D1,P1=Dijkstra(G,'x','z')
-print D1,D1['z']
-print P1
-print shortestPathNode(G,'x','u')
+G = {'s':{'u':{'travelTime':-9}, 'x':{'travelTime':5}},'v':{'y':{'travelTime':4}},
+        'x':{'y':{'travelTime':-4},'s':{'travelTime':3}},'u':{'y':{'travelTime':1},'z':{'travelTime':3}}}
+D1,P1 = Dijkstra(G,'x','z')
+print(D1, D1['z'])
+print(P1)
+print(shortestPathNode(G,'x','u'))
 '''
 #As an example of the input format, here is the graph from Cormen, Leiserson, 
 #    and Rivest (Introduction to Algorithms, 1st edition), page 528:
@@ -188,10 +188,13 @@ print shortestPathNode(G,'x','u')
 #     'x':{'u':3, 'v':9, 'y':2}, 'y':{'s':7, 'v':6}}
 #The shortest path from s to v is ['s', 'x', 'u', 'v'] and has length 9.
 
-#print "next example"
-#G = {'s':{'u':10, 'x':5}, 'u':{'v':1, 'x':2}, 'v':{'y':4}, 'x':{'u':3, 'v':9, 'y':2}, 'y':{'s':7, 'v':6}}
-#Path = shortestPath(G,'s','v')
-#print 'The shortest path from s to v: ', Path
+print("next example")
+G = {'s':{'u':10, 'x':5}, 'u':{'v':1, 'x':2}, 'v':{'y':4}, 'x':{'u':3, 'v':9, 'y':2}, 'y':{'s':7, 'v':6}}
+D1,P1 = Dijkstra(G,'x','z')
+print('D is:', D1)
+print('P is:', P1)
+Path = shortestPath(G,'s','v')
+print('The shortest path from s to v: ', Path)
 
 # not reachable
 #print "the 3rd example" 

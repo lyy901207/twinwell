@@ -1,18 +1,15 @@
-import lane
-import link
-import node
-import network
-
 class Turn(object):
+    def __init__(self, node2, node3, node1, network):
+        self.node2 = node2
+        self.node3 = node3
+        self.node1 = node1
 
-    def __init__(self, id, network):
-        self.id = id
         self.network = network
-        # previous timestamp
+        self.registerTurn = registerTurn()
 
-    def __repr__(self):
-        return "<" + " ".join(["lane" + self.id, self.type, str(self.link.node1.id), str(self.link.node2.id),
-                               ]) + ">"
+        self.stress = None
+        self.turn = None
+        self.stressMap = None
 
     def calculateDirection(self, point1, point2, checkPoint):
         '''
@@ -121,7 +118,7 @@ class Turn(object):
         return turned_degree
 
 
-    def turnGen(self):
+    def generateTurn(self):
         """
         This function returns a dictionary of turn and degree of each pair of lanes
         (one inbound and one outbound of an intersection) at each intersection( or node);
@@ -135,6 +132,7 @@ class Turn(object):
         turn = {}
 
         for node in self.network.idNodeMap.keys():  # at intersection of nodeid
+            print('The node id in network is:',node)
             nodeStartLaneList = []  # store the lane id which starts from nodeid
             nodeEndLanelist = []  # store the lane id which ends at nodeid
 

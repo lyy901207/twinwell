@@ -71,7 +71,7 @@ class Vehicle(object):
 
        # print(self.currentLane, startNode.id, self.nodeDest.id)
         (bestLaneRoute, bestNodeMap, timeCost) = bestLaneBestNodeTimeCost(self.network.typeGraphMap[self.laneType],
-                                                                          startNode.id, self.nodeDest.id)
+                                                                          startNode.id, self.nodeDest.id, self.network)
         self.bestLaneRoute = bestLaneRoute
         self.bestNodeMap = bestNodeMap
         self.timeBudget = timeCost

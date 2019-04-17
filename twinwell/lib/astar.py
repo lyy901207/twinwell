@@ -25,7 +25,7 @@ def generateCostMap(G, network):
 
 
 
-def astar(G, start, end, costMap):
+def astar(G, start, end, network):
     '''
     G is a dictionary, indexed by vertices.  For any vertex v, G[v] is itself a dictionary, indexed by the neighbors
     of v.  For any edge v->w, G[v][w] is the length of the edge.
@@ -39,7 +39,6 @@ def astar(G, start, end, costMap):
     :param G: road graph
     :param start: start node
     :param end: end node
-    :param costMap: cost for node1 to node2
     :return: (D, P)
     '''
 
@@ -106,7 +105,7 @@ def astar(G, start, end, costMap):
 
         # Loop through children
         for child in children:
-            #print('child is:', child)
+            print('child is:', child)
 
             # Child is on the closed list
             for closed_child in closed_list:
@@ -115,9 +114,9 @@ def astar(G, start, end, costMap):
 
             # Create the f, g, and h values
             aMap[child] = {'g':0.0, 'h':0.0, 'f':0.0}
-            aMap[child]['g_cost'] = aMap[current_node]['g_cost'] + costMap[current_node][child]['tc']
+            aMap[child]['g_cost'] = aMap[current_node]['g_cost'] + G[current_node][child].travelTime
             #child.h = child.manhattanDist(end) + [current_node][child]
-            aMap[child]['h_cost'] = costMap[current_node][child]['stress']
+            aMap[child]['h_cost'] = network.idNodeMap[child].manhattanDist(network.idNodeMap[end_node])
             aMap[child]['f_cost'] = aMap[child]['g_cost'] + aMap[child]['h_cost']
 
             # Child is already in the open list
@@ -129,13 +128,13 @@ def astar(G, start, end, costMap):
             open_list.append(child)
 
 
-def shortestPathNode(G, start, end, costMap):
+def shortestPathNode(G, start, end, network):
     # revised by Gong
     # this function returns a dictionary of cost (time or distance) along the path, \
     # and a dictionary of node-pair of links in the shortest path given a graph and a pair of origin-destination.
     # these two dictionaries have the same style as Dijkstra
     #D, P = Dijkstra(G, start, end)
-    D, P = astar(G, start, end, costMap)
+    D, P = astar(G, start, end, network)
     Path = []
 
     reach = 0
@@ -189,9 +188,9 @@ def convert_ppath_to_pathids(dic_ppath, dic_graph, start, end):
     return dic_routes
 
 
-def bestLaneBestNodeTimeCost(G, start, end, costMap):
-    D, P = shortestPathNode(G, start, end, costMap)
-    bestRouteLane = convert_ppath_to_pathids(P, costMap, start, end)
+def bestLaneBestNodeTimeCost(G, start, end, network):
+    D, P = shortestPathNode(G, start, end, network)
+    bestRouteLane = convert_ppath_to_pathids(P, G, start, end)
     return (bestRouteLane, P, D[end])
 
 

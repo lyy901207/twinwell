@@ -3,7 +3,11 @@ from util.readOd import *
 from model.network import Network
 from model.turn import *
 from lib.astar import *
-
+import time, datetime
+import copy
+import random
+import csv
+import json
 
 # set the location of the output results
 
@@ -29,7 +33,7 @@ outfile_statistic2 = open(r'C:\Users\lyy90\OneDrive\Documents\GitHub\twinwell\tw
 
 
 startTs = datetime.datetime(2019, 1, 1, 7, 0, 0)
-totalSteps = 20 #2000
+totalSteps = 2500 #2000
 timeStep = 1
 
 jamDensity = 124
@@ -46,7 +50,7 @@ fNode = open("C:/Users/lyy90/OneDrive/Documents/GitHub/twinwell/twinwell/Sioux F
 fNode.readline()
 fLane = open("C:/Users/lyy90/OneDrive/Documents/GitHub/twinwell/twinwell/Sioux Falls network/lanes-SiouxFalls_gong.csv")
 fLane.readline()
-pOd = "C:/Users/lyy90/OneDrive/Documents/GitHub/twinwell/twinwell/OD_data_test"
+pOd = "C:/Users/lyy90/OneDrive/Documents/GitHub/twinwell/twinwell/OD_data"
 
 readNodes(fNode, network)
 readLanes(fLane, network)
@@ -68,13 +72,14 @@ networks = [network]
 for i in range(totalSteps):
     #print(i)
     network = networks[-1] # current network
-    print('This is step:', i, 'in', totalSteps)
+    print('This is step', i, 'in', totalSteps)
 
-    print(network.ts)
+    #print(network.ts)
 
     # update best route
     for vid in network.idVehicleMap:
         vehicle = network.idVehicleMap[vid]
+        #print('This is vehicle:', vehicle.id, ';ori:', vehicle.nodeOrigin, ';destination:', vehicle.nodeDest)
         if not vehicle.isRunning(network.ts): continue
 
         # TODO: updating
@@ -101,3 +106,41 @@ for i in range(totalSteps):
     network_next.ts += datetime.timedelta(seconds=1)
     networks.append(network_next)
 
+def timestamp(dt):
+    return dt.timestamp() if dt else None
+
+def serializeNode(node):
+    return {'id': node.id, 'type': node.type, 'x': node.x, 'y': node.y}
+
+def serializeLink(link):
+    return {'id': link.id, 'type': link.type, 'node1_id': link.node1.id, 'node2_id': link.node2.id,
+        'lengthInKm': link.lengthInKm}
+
+def serializeLane(lane):
+    return {'id': lane.id, 'type': lane.type, 'link_id': lane.link.id,
+        'freeSpeed': lane.freeSpeed, 'freeTravelTime': lane.freeTravelTime, 'fixedCharge': lane.fixedCharge,
+        'speed': lane.speed, 'countPcu': lane.countPcu, 'density': lane.density, 'travelTime': lane.travelTime,
+        'charge': lane.charge}
+
+def serializeVehicle(ve):
+    return {'id': ve.id, 'type': ve.type, 'driverType': ve.driverType, 'maxSpeed': ve.maxSpeed,
+        'valueTime': ve.valueTime, 'probLaneChange': ve.probLaneChange, 'startTs': timestamp(ve.startTs),
+        'nodeOrigin_id': ve.nodeOrigin.id, 'nodeDest_id': ve.nodeDest.id, 'finishTs': timestamp(ve.finishTs),
+        'laneType': ve.laneType, 'currentLane_id': ve.currentLane.id, 'currentLaneProgress': ve.currentLaneProgress,
+        'timeBudget': ve.timeBudget}
+
+def serializeNetwork(network):
+    return {'ts': timestamp(network.ts), 'lanes': { l.id: serializeLane(l) for l in network.idLaneMap.values() },
+        'vehicles': { v.id: serializeVehicle(v) for v in network.idVehicleMap.values() if v.isRunning(network.ts)}}
+
+output = {}
+output["nodes"] = { n.id: serializeNode(n) for n in network.idNodeMap.values()}
+output["links"] = { l.id: serializeLink(l) for l in network.idLinkMap.values()}
+output["networks"] = []
+for network in networks:
+    output["networks"].append(serializeNetwork(network))
+
+print(output)
+f = open("visualization/output.json", "w")
+f.write("networkData = ")
+f.write(json.dumps(output))

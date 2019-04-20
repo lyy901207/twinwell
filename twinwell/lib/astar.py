@@ -6,39 +6,19 @@ import copy
 import model.lane
 
 
-def generateCostMap(G, network):
-    '''
-    This function return costMap which should be used in astar
-    :param G:
-    :return:
-    '''
-    aMap = {}
-    for neighbors in G.id.keys():
-        #print(neighbors)
-        aMap[neighbors] = {}
-        for node in G[neighbors]:
-            #print(node)
-            aMap[neighbors][node] = {}
-            aMap[neighbors][node]['tc'] = network.idLaneMap[neighbors][node].travelTime  # TODO: function for travel cost
-            aMap[neighbors][node]['stress'] =  0.0 # TODO: Stress Map
-    return aMap
-
-
-
 def astar(G, start, end, network):
     '''
-    G is a dictionary, indexed by vertices.  For any vertex v, G[v] is itself a dictionary, indexed by the neighbors
-    of v.  For any edge v->w, G[v][w] is the length of the edge.
+    self.typeGraphMap[lane.type][lane.link.node1.id][lane.link.node2.id] = lane
     This function applied a star algorithm to find the lowest cost path
-        G[node1][node2] = {'travel-time': travel time, 'stress': stress}
         g = travel time cost
-        h = mahattanDist(end) + stress
+        h = mahattanDist(end)
         f = g + h
     D: {node1: distance from start to node1, node2: distance from start to node2,...}
     P: {node1: parent of node1, node2: parent of node2,...}
-    :param G: road graph
+    :param G: self.network.typeGraphMap[self.laneType]
     :param start: start node
     :param end: end node
+    :param network: network in current timestamp
     :return: (D, P)
     '''
 
@@ -48,7 +28,7 @@ def astar(G, start, end, network):
 
     start_node = start
     end_node = end
-    #print(start_node, end_node)
+    #print('start node:', start_node, '; end node is:',end_node)
 
     aMap[start_node] = {'g_cost':0.0, 'h_cost':0.0, 'f_cost':0.0}
     aMap[end_node] = {'g_cost':0.0, 'h_cost':0.0, 'f_cost':0.0}
@@ -62,12 +42,13 @@ def astar(G, start, end, network):
 
     # Loop until you find the end
     while open_list:
-        print('Open_list is:', open_list)
+        #print('Open_list is:', open_list)
 
         # Get the current node
         current_node = open_list[0]
         current_index = 0
         for index, item in enumerate(open_list):
+            #print('item:', item, ';current_node:', current_node)
             if aMap[item]['f_cost'] < aMap[current_node]['f_cost']:
                 current_node = item
                 current_index = index
@@ -79,16 +60,19 @@ def astar(G, start, end, network):
         D[current_node] = aMap[current_node]['f_cost']
         # Found the goal
         if current_node == end_node:
+            #print(P)
             #break
             path = []
             current = current_node
+            #break
             while current:
-                print('path current is:', current)
+                #print('path current is:', current)
                 path.append(current)
                 if current != start_node:
                     current = P[current]
                 else:
                     break
+            #print(start_node, end_node, path[::-1])
             return (D, P)
             #return path[::-1] # Return reversed path
 
@@ -96,16 +80,17 @@ def astar(G, start, end, network):
         children = []
         #print('current_node is:', current_node)
         for success_node in G[current_node]:
-            print('This is success_node for' , current_node, ':', success_node)
+            #print('This is success_node for' , current_node, ':', success_node)
             #G[success_node]['parent'] = current_node
             # Append
             children.append(success_node)
-            P[success_node] = current_node
-            print('P is :', P)
+            if success_node not in closed_list:
+                P[success_node] = current_node
+            #print('P is :', P)
 
         # Loop through children
         for child in children:
-            print('child is:', child)
+            #print('child is:', child)
 
             # Child is on the closed list
             for closed_child in closed_list:
@@ -116,9 +101,10 @@ def astar(G, start, end, network):
             aMap[child] = {'g':0.0, 'h':0.0, 'f':0.0}
             aMap[child]['g_cost'] = aMap[current_node]['g_cost'] + G[current_node][child].travelTime
             #child.h = child.manhattanDist(end) + [current_node][child]
-            aMap[child]['h_cost'] = network.idNodeMap[child].manhattanDist(network.idNodeMap[end_node])
+            aMap[child]['h_cost'] = network.idNodeMap[child].manhattanDist(network.idNodeMap[end_node])/ (0.01 *
+                                    G[current_node][child].speed)
             aMap[child]['f_cost'] = aMap[child]['g_cost'] + aMap[child]['h_cost']
-
+            # print('node id', child, ';h_cost:',aMap[child]['h_cost'], ';f_cost:', aMap[child]['f_cost'])
             # Child is already in the open list
             for open_node in open_list:
                 if child == open_node and aMap[child]['g_cost'] > aMap[open_node]['g_cost']:
@@ -240,9 +226,9 @@ def main():
     #end = (7, 6)
 
     #print(generateCostMap(G))
-    aMap , P = astar(G, 's', 'y', costMap)
-    print('The fist return of astar() is:', aMap)
-    print('The second return of astar() is:', P)
+    #aMap , P = astar(G, 's', 'y', network)
+    #print('The fist return of astar() is:', aMap)
+    #print('The second return of astar() is:', P)
     #path = bestLaneBestNodeTimeCost(G, 's', 'y', costMap)
     #print(path)
 

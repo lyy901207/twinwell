@@ -21,7 +21,7 @@ def astar(G, start, end, network):
     :param network: network in current timestamp
     :return: (D, P)
     '''
-
+    #print('parameter',G, start, end, network)
     aMap = {} # dict to store g, h, f
     P = {} # dict to store parent node
     D = {} # dict to store final cost
@@ -42,39 +42,51 @@ def astar(G, start, end, network):
 
     # Loop until you find the end
     while open_list:
-        #print('Open_list is:', open_list)
+        #print('come into this part:')
 
         # Get the current node
         current_node = open_list[0]
         current_index = 0
         for index, item in enumerate(open_list):
             #print('item:', item, ';current_node:', current_node)
+            #D[current_node] = aMap[current_node]['f_cost']
+            D[item] = aMap[item]['f_cost']
+
+            #if current_node == end_node:
+            if item == end_node:
+                #print('end node is:', current_node)
+                # break
+                path = []
+                current = current_node
+                # break
+                while current:
+                    # print('path current is:', current)
+                    path.append(current)
+                    if current != start_node:
+                        current = P[current]
+                    else:
+                        break
+                #print(D, path[::-1])
+                return (D, P)
+                # return path[::-1] # Return reversed path
+
             if aMap[item]['f_cost'] < aMap[current_node]['f_cost']:
                 current_node = item
                 current_index = index
+                #print('aMap[item]:',aMap[item]['f_cost'], ';aMap[current]:', aMap[current_node]['f_cost'])
+
 
         # Pop current off open list, add to closed list
-        open_list.pop(current_index)
-        closed_list.append(current_node)
+        if current_node not in closed_list:
+            open_list.pop(current_index)
+            closed_list.append(current_node)
+            #print("open list is:", open_list, 'closed list is:', closed_list)
+        #break
 
-        D[current_node] = aMap[current_node]['f_cost']
+        #print(current_node, 'D is:', D)
+
         # Found the goal
-        if current_node == end_node:
-            #print(P)
-            #break
-            path = []
-            current = current_node
-            #break
-            while current:
-                #print('path current is:', current)
-                path.append(current)
-                if current != start_node:
-                    current = P[current]
-                else:
-                    break
-            #print(start_node, end_node, path[::-1])
-            return (D, P)
-            #return path[::-1] # Return reversed path
+
 
         # Generate children
         children = []
@@ -87,31 +99,32 @@ def astar(G, start, end, network):
             if success_node not in closed_list:
                 P[success_node] = current_node
             #print('P is :', P)
+        #break
 
         # Loop through children
         for child in children:
-            #print('child is:', child)
-
-            # Child is on the closed list
-            for closed_child in closed_list:
-                if child == closed_child:
-                    continue
+            #print('child is:', child, children)
 
             # Create the f, g, and h values
-            aMap[child] = {'g':0.0, 'h':0.0, 'f':0.0}
+            aMap[child] = {'g_cost':0.0, 'h_cost':0.0, 'f_cost':0.0}
             aMap[child]['g_cost'] = aMap[current_node]['g_cost'] + G[current_node][child].travelTime
+            #print('open list:', open_list)
+            #print('gCost:',aMap[child]['g_cost'])
             #child.h = child.manhattanDist(end) + [current_node][child]
-            aMap[child]['h_cost'] = network.idNodeMap[child].manhattanDist(network.idNodeMap[end_node])/ (0.01 *
-                                    G[current_node][child].speed)
+            aMap[child]['h_cost'] = network.idNodeMap[child].hCost
             aMap[child]['f_cost'] = aMap[child]['g_cost'] + aMap[child]['h_cost']
-            # print('node id', child, ';h_cost:',aMap[child]['h_cost'], ';f_cost:', aMap[child]['f_cost'])
+            #print('node id', child, ';h_cost:',aMap[child])
             # Child is already in the open list
-            for open_node in open_list:
-                if child == open_node and aMap[child]['g_cost'] > aMap[open_node]['g_cost']:
-                    continue
-
+            #for open_node in open_list:
+            #    if child in open_list or aMap[child]['f_cost'] > aMap[open_node]['f_cost'] or child in closed_list:
+            #        continue
             # Add the child to the open list
-            open_list.append(child)
+            if (child not in closed_list) and (child not in open_list):
+                #print('before add to open list, the current open list is:', open_list)
+                open_list.append(child)
+        #if len(open_list)>15: break
+    #print(D,P)
+
 
 
 def shortestPathNode(G, start, end, network):
@@ -120,6 +133,7 @@ def shortestPathNode(G, start, end, network):
     # and a dictionary of node-pair of links in the shortest path given a graph and a pair of origin-destination.
     # these two dictionaries have the same style as Dijkstra
     #D, P = Dijkstra(G, start, end)
+    #print(G, start, end, network)
     D, P = astar(G, start, end, network)
     Path = []
 

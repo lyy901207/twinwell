@@ -104,14 +104,25 @@ def astar(G, start, end, network):
         # Loop through children
         for child in children:
             #print('child is:', child, children)
+            #print('G is:', G[child])
 
             # Create the f, g, and h values
+            if child in closed_list:
+                continue
             aMap[child] = {'g_cost':0.0, 'h_cost':0.0, 'f_cost':0.0}
             aMap[child]['g_cost'] = aMap[current_node]['g_cost'] + G[current_node][child].travelTime
-            #print('open list:', open_list)
             #print('gCost:',aMap[child]['g_cost'])
             #child.h = child.manhattanDist(end) + [current_node][child]
-            aMap[child]['h_cost'] = network.idNodeMap[child].hCost
+            manhattanDist = abs(network.idNodeMap[child].x - network.idNodeMap[end_node].x) \
+                            + abs(network.idNodeMap[child].y - network.idNodeMap[end_node].y)
+            # todo: speed==None
+            #print('G[P[child]][child]',G[P[child]][child].freeSpeed)
+            if G[P[child]][child].speed == None:
+                print('The speed is None!!')
+                G[P[child]][child].speed = G[P[child]][child].freeSpeed
+            heuristicCost = manhattanDist / G[P[child]][child].speed  # magic speed
+            #print('heuristic:', heuristicCost)
+            aMap[child]['h_cost'] = heuristicCost
             aMap[child]['f_cost'] = aMap[child]['g_cost'] + aMap[child]['h_cost']
             #print('node id', child, ';h_cost:',aMap[child])
             # Child is already in the open list
@@ -190,7 +201,11 @@ def convert_ppath_to_pathids(dic_ppath, dic_graph, start, end):
 
 def bestLaneBestNodeTimeCost(G, start, end, network):
     D, P = shortestPathNode(G, start, end, network)
-    bestRouteLane = convert_ppath_to_pathids(P, G, start, end)
+    bestRouteLane = convert_ppath_to_pathids(P, G, start, end)  # dictionary of lane id of best route
+    #print('Start:', start, 'End:', end)
+    #print('This is bestRouteLane:',bestRouteLane)
+    #print('This is P:', P)
+    #print('This is D[end]:', D[end])
     return (bestRouteLane, P, D[end])
 
 

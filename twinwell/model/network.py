@@ -63,6 +63,7 @@ class Network(object):
             vehicle.currentLane.countPcu += pcu
         for lane in self.idLaneMap.values():
             lane.updatePropertiesBasedOnPcu()
+            #print('The current lane is:', lane.id, ';lane type:',lane.type, ';count PCU:', lane.countPcu)
 
     def runningVehicleCount(self):
         """

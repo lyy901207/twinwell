@@ -1,4 +1,5 @@
-JAMDENSITY = 12400
+JAMDENSITY = 124
+import numpy as np
 
 class Lane(object):
     # as it is lane, it has only one direction; this is the different part from link
@@ -67,14 +68,16 @@ class Lane(object):
             # negative linear relationship between density and speed is used
             # additional parameters of free speed and jam  density are needed.
             if density >= JAMDENSITY:  # to avoid getting 0 or minus speed
-                speed = 0.001  # km/h
+                #speed = 0.001  # km/h
+                speed = 0.99
             else:
                 speed = freespeed * (1.0 - 1.0 * density / JAMDENSITY)
             return speed
-
+        #print('countPcu', self.countPcu, 'length in km:', self.link.lengthInKm)
         self.density = self.countPcu / self.link.lengthInKm
         self.speed = densitySpeed(self.density, self.freeSpeed)
         self.travelTime = self.link.lengthInKm * 3600.0 / self.speed
+        #print(self.id, 'The current density is:', self.density, 'the speed is:', self.speed, 'JAM', JAMDENSITY)
 
     def delayCalculation(self, strategy):
         if strategy == 'vol_sim':
@@ -86,11 +89,12 @@ class Lane(object):
             elif self.countPcu < self.minPcu:
                 delayingTime = self.minDelay
             else:
-                delayingTime = int(minDelay + 1.0 * (self.maxDelay - self.minDelay)
+                delayingTime = int(self.minDelay + 1.0 * (self.maxDelay - self.minDelay)
                                    * (self.countPcu - self.minPcu)/(self.maxPcu - self.minPcu))
         elif strategy == 'random':
-            delayingTime = np.randint(self.minDelay, self.maxDelay)
+            delayingTime = np.random.randint(self.minDelay, self.maxDelay)
 
         elif strategy == 'fix':
             delayingTime = 5
         return delayingTime
+

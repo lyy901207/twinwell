@@ -8,32 +8,46 @@ import copy
 import random
 import csv
 import json
+import matplotlib.pyplot as plt
+
+
 
 # set the location of the output results
 
 #for checking the simulation logs
-#outfile = open(r"C:\Users\lyy90\OneDrive\Documents\GitHub\twinwell\twinwell\outfile_process_during_simulation.csv","ab")
-#writer_log = csv.writer(outfile)
+#outfile = open(r"C:\Users\lyy90\OneDrive\Documents\GitHub\twinwell\twinwell\outfile_process_during_simulation.csv","w")
+#writer_log = csv.DictWriter(outfile)
 
 #for storing the status of lanes and vehicles
-#outfile_lane_features = open(r'C:\Users\lyy90\OneDrive\Documents\GitHub\twinwell\twinwell\outfile_lane_features.csv',"ab")
-#writer_lane_features = csv.writer(outfile_lane_features)
 
-#outfile_veh_features = open(r'C:\Users\lyy90\OneDrive\Documents\GitHub\twinwell\twinwell\outfile_veh_features.csv',"ab")
-#writer_veh_features = csv.writer(outfile_veh_features)
+#outfile_lane_features = open(r'C:\Users\lyy90\OneDrive\Documents\GitHub\twinwell\twinwell\result\outfile_lane_features_uniform.csv', "w", newline='')
+#lane_fieldnames = ['ts', 'id', 'density', 'travel time', 'count PCU']
+#writer_lane_features = csv.DictWriter(outfile_lane_features, fieldnames=lane_fieldnames)
+#writer_lane_features.writeheader()
 
-#outfile_OD_features = open(r'C:\Users\lyy90\OneDrive\Documents\GitHub\twinwell\twinwell\outfile_OD_features.csv',"ab")
-#writer_OD_features = csv.writer(outfile_OD_features)
+#outfile_veh_features = open(r'C:\Users\lyy90\OneDrive\Documents\GitHub\twinwell\twinwell\result\outfile_veh_features.csv',
+#                            "w",newline='')
+#vehicle_filenames = ['ts', "veh-id", "veh-type", "value-time", "lane change prob", "origin",
+#                                              "destination", "start-time","end-time"]
+#writer_veh_features = csv.DictWriter(outfile_veh_features, fieldnames=vehicle_filenames)
+#writer_veh_features.writeheader()
 
-#outfile_statistic1 = open(r'C:\Users\lyy90\OneDrive\Documents\GitHub\twinwell\twinwell\outfile_statistics_along_timestamps.csv',"ab")
-#writer_statistic_along_timestamps = csv.writer(outfile_statistic1)
+#outfile_OD_features = open(r'C:\Users\lyy90\OneDrive\Documents\GitHub\twinwell\twinwell\outfile_OD_features.csv',"w")
+#writer_OD_features = csv.DictWriter(outfile_OD_features)
 
-outfile_statistic2 = open(r'C:\Users\lyy90\OneDrive\Documents\GitHub\twinwell\twinwell\outfile_statistics_whole_simulation.csv',"ab")
-#writer_statistic_whole_simulation = csv.writer(outfile_statistic2)
+#outfile_statistic1 = open(r'C:\Users\lyy90\OneDrive\Documents\GitHub\twinwell\twinwell\
+#                           outfile_statistics_along_timestamps.csv',"w")
+#writer_statistic_along_timestamps = csv.DictWriter(outfile_statistic1)
 
+#outfile_statistic2 = open(r'C:\Users\lyy90\OneDrive\Documents\GitHub\twinwell\twinwell\
+#                              outfile_statistics_whole_simulation.csv',"w")
+#writer_statistic_whole_simulation = csv.DictWriter(outfile_statistic2)
+
+# calculation time
+calculationStart = time.clock()
 
 startTs = datetime.datetime(2019, 1, 1, 7, 0, 0)
-totalSteps = 2500 #2000
+totalSteps = 10000 #2500
 timeStep = 1
 
 jamDensity = 124
@@ -43,6 +57,9 @@ random.seed(10)
 #writer_log.writerow('This simulation is for:', 'delay type:', delayingType, 'vehicle generation:', genVehicle)
 
 vehicleId = 0
+GEN_VEH_DIST = 'uniform' # ["uniform", "random", "random_whole", "normal_whole"]
+STRATEGY = 'fix' # ['vol_sim', 'vol_dist', 'random', 'fix']
+MULTIVEH = 2 #[default=1, 2, 3,...]
 
 network = Network(startTs)
 
@@ -55,56 +72,92 @@ pOd = "C:/Users/lyy90/OneDrive/Documents/GitHub/twinwell/twinwell/OD_data"
 readNodes(fNode, network)
 readLanes(fLane, network)
 tsPairNodePairTypeMap = readOd(pOd)
-genVehicle(tsPairNodePairTypeMap, "random", vehicleId, medianValueTime, network)
-#genVehicle(tsPairNodePairTypeMap, "uniform", vehicleId, medianValueTime, network)
+#print(tsPairNodePairTypeMap)
+genVehicle(tsPairNodePairTypeMap, GEN_VEH_DIST, vehicleId, medianValueTime, network, MULTIVEH)
 t = sorted([vehicle.startTs for vehicle in network.idVehicleMap.values()])
 
 
 for vid in network.idVehicleMap:
-    print(network.idVehicleMap[vid])
+    print(vid, network.idVehicleMap[vid].startTs)
+
 
 networks = [network]
 
-#turn = turnGen(network)
-#sMap = stressMap(turn)
-#print(sMap)
+y_running = []
+y_stopping = []
+x_time = list(range(totalSteps))
+
+dictTimeCost = {}
+countTime = 0
 
 for i in range(totalSteps):
-    #print(i)
     network = networks[-1] # current network
-    print('This is step', i, 'in', totalSteps)
-
-    #print(network.ts)
-
+    print('This is step', i, 'in', totalSteps, 'and current time is:', network.ts)
+    #break
     # update best route
     for vid in network.idVehicleMap:
         vehicle = network.idVehicleMap[vid]
-        #print('This is vehicle:', vehicle.id, ';ori:', vehicle.nodeOrigin, ';destination:', vehicle.nodeDest)
+        #print('vehicle.isRunning(network.ts):',vehicle.isRunning(network.ts))
         if not vehicle.isRunning(network.ts): continue
 
-        # TODO: updating
-
-
-        # TODO: add new searching algorithm
-        vehicle.updateShortestPath()
-
+        vehicle.updateShortestPath() #TODO: add vid as an parameter in the updating process
+        #print('This current lane is:', vehicle.currentLane)
     # update lane features
     network.updateLanes()
 
     # update vehicle location
     for vehicle in network.idVehicleMap.values():
+        # calculate the dictTimeCost at the startTs for every vehicle
+        if vehicle.startTs == network.ts:
+            dictTimeCost[vehicle.id] = 0
+            for laneid in vehicle.bestLaneRoute.keys():
+                dictTimeCost[vehicle.id] += network.idLaneMap[laneid].travelTime
+            #print('dictTimeCost[vehicle]1',dictTimeCost[vehicle])
+
         if not vehicle.isRunning(network.ts): continue
-        vehicle.updateLocation(1) #update for 1 SECOND!
+        # todo: check this function
+        vehicle.updateLocation(1, delayType=STRATEGY) #update for 1 SECOND!
+        vehicle.changeLane(dictTimeCost[vehicle.id], 1, medianValueTime, countTime)
+        #print(vehicle.id, 'The current lane is:',vehicle.laneType)
 
     # decision
 
     print(network.runningVehicleCount(), 'running')
     print(network.finishVehicleCount(), 'finished')
+    y_running.append(network.runningVehicleCount())
+    y_stopping.append(network.finishVehicleCount())
 
     # copy network to i+1
     network_next = copy.deepcopy(network)
     network_next.ts += datetime.timedelta(seconds=1)
     networks.append(network_next)
+
+    if network.runningVehicleCount() == 0 and network.finishVehicleCount()>1000:
+        break
+
+    countTime += 1
+
+    # output features of lanes along the time stamps
+    '''
+    for lane_id in network.idLaneMap:
+        writer_lane_features.writerow({'ts': i,
+                                       'id':network.idLaneMap[lane_id].id,
+                                       'density': network.idLaneMap[lane_id].density,
+                                       'travel time':network.idLaneMap[lane_id].travelTime})  
+    for veh_id in network.idVehicleMap:
+        writer_veh_features.writerow({'ts': i,
+                                      "veh-id": network.idVehicleMap[veh_id].id,
+                                      "veh-type": network.idVehicleMap[veh_id].type,
+                                      "value-time": network.idVehicleMap[veh_id].valueTime,
+                                      "lane change prob": network.idVehicleMap[veh_id].probLaneChange,
+                                      "origin": network.idVehicleMap[veh_id].nodeOrigin,
+                                      "destination": network.idVehicleMap[veh_id].nodeDest,
+                                      "start-time": network.idVehicleMap[veh_id].startTs,
+                                      "end-time": network.idVehicleMap[veh_id].finishTs})
+        '''
+
+elapsed = (time.clock() - calculationStart)
+print('The total calculation time is:', elapsed, 'seconds')
 
 def timestamp(dt):
     return dt.timestamp() if dt else None
@@ -127,7 +180,7 @@ def serializeVehicle(ve):
         'valueTime': ve.valueTime, 'probLaneChange': ve.probLaneChange, 'startTs': timestamp(ve.startTs),
         'nodeOrigin_id': ve.nodeOrigin.id, 'nodeDest_id': ve.nodeDest.id, 'finishTs': timestamp(ve.finishTs),
         'laneType': ve.laneType, 'currentLane_id': ve.currentLane.id, 'currentLaneProgress': ve.currentLaneProgress,
-        'timeBudget': ve.timeBudget}
+        'timeBudget': ve.timeBudget, 'changeLane': ve.change_lane}
 
 def serializeNetwork(network):
     return {'ts': timestamp(network.ts), 'lanes': { l.id: serializeLane(l) for l in network.idLaneMap.values() },
@@ -140,7 +193,18 @@ output["networks"] = []
 for network in networks:
     output["networks"].append(serializeNetwork(network))
 
-print(output)
-f = open("visualization/output.json", "w")
-f.write("networkData = ")
+
+
+f_path = 'visualization/'+GEN_VEH_DIST+'_'+STRATEGY+str(MULTIVEH)+'_output.json'
+f = open(f_path, "w")
+#f.write("networkData = ")
 f.write(json.dumps(output))
+
+
+#plt.figure()
+#plt.plot(x_time, y_running, color = 'black', label='running vehicle')
+#plt.plot(x_time, y_stopping, color='red', label='finish vehicle', linestyle = '--')
+#plt.ylabel('Number of vehicle')
+#plt.xlabel('Time')
+#plt.show()
+
